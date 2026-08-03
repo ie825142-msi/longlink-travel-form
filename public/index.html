@@ -523,15 +523,15 @@
 <script>
 // Expense categories
 const CATEGORIES = [
-  { code: 'fuel',   name: '1. 油資（自備車公里×8元）', isMileage: true,  defaultAmount: null },
+  { code: 'fuel',   name: '1. 油資(自備車公里×8元)', isMileage: true,  defaultAmount: null },
   { code: 'park',   name: '2. 停車費',                 isMileage: false, defaultAmount: 75 },
-  { code: 'etc',    name: '3. 過路費（ETC）',          isMileage: false, defaultAmount: 105 },
+  { code: 'etc',    name: '3. 過路費(ETC)',          isMileage: false, defaultAmount: 105 },
   { code: 'taxi',   name: '4. 交通費—計程車資',        isMileage: false, defaultAmount: null },
-  { code: 'train',  name: '5. 交通費—火車 / 巴士',     isMileage: false, defaultAmount: null },
+  { code: 'train',  name: '5. 交通費—火車/巴士',     isMileage: false, defaultAmount: null },
   { code: 'flight', name: '6. 交通費—飛機',            isMileage: false, defaultAmount: null },
-  { code: 'tel',    name: '7. 郵電費—電話 / 網路',     isMileage: false, defaultAmount: null },
-  { code: 'ent',    name: '8. 交際費（請備註公司/姓名）', isMileage: false, defaultAmount: null },
-  { code: 'wage',   name: '9. 固定費用（工資）',       isMileage: false, defaultAmount: null },
+  { code: 'tel',    name: '7. 郵電費—電話/網路',     isMileage: false, defaultAmount: null },
+  { code: 'ent',    name: '8. 交際費(請備註公司/姓名)', isMileage: false, defaultAmount: null },
+  { code: 'wage',   name: '9. 固定費用(工資)',       isMileage: false, defaultAmount: null },
   { code: 'other',  name: '10. 其他',                  isMileage: false, defaultAmount: null },
 ];
 
@@ -543,16 +543,16 @@ const rows = [];
 
 function initDefaults() {
   // Default dates
-  const today = new Date('2026-08-02');
-  document.getElementById('fillDate').value = '2026-08-02';
-  document.getElementById('dateFrom').value = '2026-04-01';
-  document.getElementById('dateTo').value = '2026-04-30';
-  document.getElementById('signDate').textContent = '2026-08-02';
+  const today = new Date('');
+  document.getElementById('fillDate').value = '';
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value = '';
+  document.getElementById('signDate').textContent = '';
 
   // Add default rows matching original form
-  addExpenseRow('fuel', '2026-04-29', '55', null, '林口-松翰來回');
-  addExpenseRow('park', '2026-04-29', null, '75', '');
-  addExpenseRow('etc', '2026-04-29', null, '105', 'ETC 自動扣繳');
+  addExpenseRow('fuel', null, null, null, null);
+  addExpenseRow('park', null, null, null, null);
+  addExpenseRow('etc', null, null, null, null);
   // Add empty rows for other categories
   CATEGORIES.slice(3).forEach(c => addExpenseRow(c.code, '', null, c.defaultAmount ? String(c.defaultAmount) : '', ''));
 }
@@ -578,7 +578,7 @@ function addExpenseRow(presetCode, presetDate, presetQty, presetAmt, presetRemar
       <input type="number" min="0" step="1" placeholder="0" class="input-field !py-2 !text-[14px] amount-input amt-field" data-field="amt" value="${presetAmt??''}" oninput="calcTotal()">
     </td>
     <td class="py-2 px-2">
-      <input type="text" placeholder="備註（必填：交際費對象）" class="input-field !py-2 !text-[14px]" data-field="remark" value="${presetRemark||''}">
+      <input type="text" placeholder="備註（必填）" class="input-field !py-2 !text-[14px]" data-field="remark" value="${presetRemark||''}">
     </td>
     <td class="py-2 px-2 text-center no-print">
       <button type="button" onclick="removeRow(${id})" class="text-slate-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition" title="刪除">
