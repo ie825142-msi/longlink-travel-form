@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LongLink Solutions· 差旅費用申請表</title>
+<title>LONGLINK · 差旅費用申請表</title>
 <script src="https://aisearch-task.bj.bcebos.com/static/tailwindcss-3.4.17.js"></script>
 <style>
   :root {
@@ -216,7 +216,7 @@
         </div>
         <div>
           <label class="form-label">員工姓名<span class="required">*</span></label>
-          <input type="text" id="empName" placeholder="請輸入姓名" class="input-field">
+          <input type="text" id="empName" placeholder="請輸入姓名" class="input-field" value="Ian Sun" required>
         </div>
         <div>
           <label class="form-label">員工編號</label>
@@ -241,8 +241,8 @@
           <input type="text" id="title" placeholder="例如：資深工程師" class="input-field">
         </div>
         <div>
-          <label class="form-label"> Email</label>
-          <input type="text" id="contact" placeholder="XXX.XXX@longlink.tw" class="input-field">
+          <label class="form-label">聯絡分機 / Email</label>
+          <input type="text" id="contact" placeholder="分機 123 / ian@longlink.com" class="input-field">
         </div>
       </div>
     </section>
@@ -297,11 +297,11 @@
         </div>
         <div>
           <label class="form-label">起程地點 / 出發點</label>
-          <input type="text" id="locFrom" placeholder="例如：林口辦公室" class="input-field">
+          <input type="text" id="locFrom" placeholder="例如：林口" class="input-field" value="林口">
         </div>
         <div>
           <label class="form-label">目的地 / 拜訪公司</label>
-          <input type="text" id="locTo" placeholder="例如：松翰科技" class="input-field">
+          <input type="text" id="locTo" placeholder="例如：松翰科技" class="input-field" value="松翰">
         </div>
         <div class="md:col-span-2">
           <label class="form-label">出差事由<span class="required">*</span></label>
@@ -320,7 +320,7 @@
         </div>
         <div>
           <label class="form-label">專案 / 成本中心代碼</label>
-          <input type="text" id="costCenter" placeholder="例如：LL-2026-042" class="input-field">
+          <input type="text" id="costCenter" placeholder="例如：PRJ-2026-042" class="input-field">
         </div>
       </div>
     </section>
@@ -407,6 +407,7 @@
               <option value="check">支票</option>
               <option value="cash">現金</option>
             </select>
+            <input type="text" id="bankAccount" placeholder="銀行帳號末四碼（選填）" class="input-field mt-2" maxlength="20">
           </div>
         </div>
       </div>
@@ -523,38 +524,36 @@
 <script>
 // Expense categories
 const CATEGORIES = [
-  { code: 'fuel',   name: '1. 油資(自備車公里×8元)', isMileage: true,  defaultAmount: null },
-  { code: 'park',   name: '2. 停車費',                 isMileage: false, defaultAmount: 75 },
-  { code: 'etc',    name: '3. 過路費(ETC)',          isMileage: false, defaultAmount: 105 },
-  { code: 'taxi',   name: '4. 交通費—計程車資',        isMileage: false, defaultAmount: null },
-  { code: 'train',  name: '5. 交通費—火車/巴士',     isMileage: false, defaultAmount: null },
-  { code: 'flight', name: '6. 交通費—飛機',            isMileage: false, defaultAmount: null },
-  { code: 'tel',    name: '7. 郵電費—電話/網路',     isMileage: false, defaultAmount: null },
-  { code: 'ent',    name: '8. 交際費(請備註公司/姓名)', isMileage: false, defaultAmount: null },
-  { code: 'wage',   name: '9. 固定費用(工資)',       isMileage: false, defaultAmount: null },
-  { code: 'other',  name: '10. 其他',                  isMileage: false, defaultAmount: null },
+  { code: 'fuel',   no: 1, name: '油資（自備車公里×8元）', isMileage: true,  defaultAmount: null },
+  { code: 'park',   no: 2, name: '停車費',                 isMileage: false, defaultAmount: 75 },
+  { code: 'etc',    no: 3, name: '過路費（ETC）',          isMileage: false, defaultAmount: 105 },
+  { code: 'taxi',   no: 4, name: '交通費—計程車資',        isMileage: false, defaultAmount: null },
+  { code: 'train',  no: 5, name: '交通費—火車 / 巴士',     isMileage: false, defaultAmount: null },
+  { code: 'flight', no: 6, name: '交通費—飛機',            isMileage: false, defaultAmount: null },
+  { code: 'tel',    no: 7, name: '郵電費—電話 / 網路',     isMileage: false, defaultAmount: null },
+  { code: 'ent',    no: 8, name: '交際費（請備註公司/姓名）', isMileage: false, defaultAmount: null },
+  { code: 'wage',   no: 9, name: '固定費用（工資）',       isMileage: false, defaultAmount: null },
+  { code: 'other',  no:10, name: '其他',                   isMileage: false, defaultAmount: null },
 ];
 
-const categoryOptions = CATEGORIES.map(c => `<option value="${c.code}">${c.name}</option>`).join('');
+const categoryOptions = CATEGORIES.map(c => `<option value="${c.code}">${c.no}. ${c.name}</option>`).join('');
 
 // State
 let rowId = 0;
 const rows = [];
 
 function initDefaults() {
-  // Default dates
-  const today = new Date('');
-  document.getElementById('fillDate').value = '';
-  document.getElementById('dateFrom').value = '';
-  document.getElementById('dateTo').value = '';
-  document.getElementById('signDate').textContent = '';
+  // Default dates — 預設為今日，便於員工快速填寫；可自行修改
+  const today = new Date();
+  const ymd = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const todayStr = ymd(today);
+  document.getElementById('fillDate').value = todayStr;
+  document.getElementById('dateFrom').value = todayStr;
+  document.getElementById('dateTo').value   = todayStr;
+  document.getElementById('signDate').textContent = todayStr;
 
-  // Add default rows matching original form
-  addExpenseRow('fuel', null, null, null, null);
-  addExpenseRow('park', null, null, null, null);
-  addExpenseRow('etc', null, null, null, null);
-  // Add empty rows for other categories
-  CATEGORIES.slice(3).forEach(c => addExpenseRow(c.code, '', null, c.defaultAmount ? String(c.defaultAmount) : '', ''));
+  // Add empty rows for all 10 categories (預設空白，員工依實際填寫)
+  CATEGORIES.forEach(c => addExpenseRow(c.code, '', null, '', ''));
 }
 
 function addExpenseRow(presetCode, presetDate, presetQty, presetAmt, presetRemark) {
@@ -562,6 +561,7 @@ function addExpenseRow(presetCode, presetDate, presetQty, presetAmt, presetRemar
   const tr = document.createElement('tr');
   tr.className = 'expense-row border-b border-slate-100';
   tr.id = `row-${id}`;
+  tr.dataset.no = id;           // ✅ 加上 data-no，collectFormData 才不會跳過此列
   tr.innerHTML = `
     <td class="py-2 px-2">
       <select class="input-field !py-2 !text-[14px]" onchange="onCategoryChange(this, ${id})" data-field="cat">
@@ -578,7 +578,7 @@ function addExpenseRow(presetCode, presetDate, presetQty, presetAmt, presetRemar
       <input type="number" min="0" step="1" placeholder="0" class="input-field !py-2 !text-[14px] amount-input amt-field" data-field="amt" value="${presetAmt??''}" oninput="calcTotal()">
     </td>
     <td class="py-2 px-2">
-      <input type="text" placeholder="備註（必填）" class="input-field !py-2 !text-[14px]" data-field="remark" value="${presetRemark||''}">
+      <input type="text" placeholder="備註（必填：交際費對象）" class="input-field !py-2 !text-[14px]" data-field="remark" value="${presetRemark||''}">
     </td>
     <td class="py-2 px-2 text-center no-print">
       <button type="button" onclick="removeRow(${id})" class="text-slate-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition" title="刪除">
@@ -722,62 +722,91 @@ const API_BASE = '/api'; // Vercel 同網域部署，直接走相對路徑
 
 function collectFormData(no) {
   // 收集明細（從動態產生的費用列抓取）
-  const rows = document.querySelectorAll('#expenseBody tr');
   const items = [];
-  rows.forEach(tr => {
-    const itemNo = tr.dataset.no;
-    if (!itemNo) return;
-    const cells = tr.querySelectorAll('td');
-    const name = cells[0]?.textContent.trim();
-    // 嘗試取得 input 值，否則取文字
-    const inputEl = cells[1]?.querySelector('input');
-    const detail = inputEl ? inputEl.value : (cells[1]?.textContent.trim() || '');
-    // 金額：最後一個數字型 input
-    const amountInput = tr.querySelector('input[type="number"]');
-    const amount = Number(amountInput ? amountInput.value : 0);
-    if (amount > 0 || detail) items.push({ no: Number(itemNo), name, detail, amount });
+  document.querySelectorAll('#expenseBody tr').forEach((tr, idx) => {
+    const catSel   = tr.querySelector('[data-field="cat"]');
+    const dateInp  = tr.querySelector('[data-field="date"]');
+    const qtyInp   = tr.querySelector('[data-field="qty"]');
+    const amtInp   = tr.querySelector('[data-field="amt"]');
+    const rmkInp   = tr.querySelector('[data-field="remark"]');
+
+    const code   = catSel?.value || '';
+    const catObj = CATEGORIES.find(c => c.code === code);
+    const date   = dateInp?.value || '';
+    const qtyVal = parseFloat(qtyInp?.value) || 0;
+    const amtVal = parseFloat(amtInp?.value) || 0;
+    const remark = (rmkInp?.value || '').trim();
+
+    // 只有「有選擇項目且有金額或有日期/備註」才算有效列；空列直接跳過
+    if (!catObj) return;
+    if (amtVal <= 0 && !date && !remark) return;
+
+    // 組裝明細字串
+    let detail = '';
+    if (catObj.isMileage && qtyVal > 0) detail = `${qtyVal}公里×8元`;
+    if (date)   detail = (detail ? detail + ' / ' : '') + date;
+    if (remark) detail = (detail ? detail + ' / ' : '') + remark;
+
+    items.push({
+      no: catObj.no ?? (idx + 1),
+      name: catObj.name.replace(/^\d+\.\s*/, ''), // 去掉前綴編號
+      detail,
+      amount: amtVal,
+    });
   });
 
-  // 從 contact 欄位嘗試解析 Email（可同時填分機/Email）
+  // 從 contact 欄位嘗試解析 Email（使用嚴格 regex）
   const contactRaw = document.getElementById('contact').value.trim();
-  const emailMatch = contactRaw.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
-  const email = emailMatch ? emailMatch[0] : '';
+  const emailRe = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  // 取出第一個看起來像 email 的片段，且必須是完整合法格式
+  let email = '';
+  if (contactRaw) {
+    const candidate = contactRaw.split(/[\s,;、/]+/).find(s => emailRe.test(s));
+    if (candidate) email = candidate;
+  }
 
-    // 金額：優先從已渲染的摘要區讀（數字已帶千分位），保險 fallback 用計算值
-    const _num = (el) => el ? parseFloat(el.textContent.replace(/,/g, '')) || 0 : 0;
-    const _val = (id) => {
-      const el = document.getElementById(id);
-      return el ? parseFloat(el.value) || 0 : 0;
-    };
-    const total       = _num(document.getElementById('grandTotal'));
-    const advance     = _val('advance');
-    const subsidy     = _val('subsidy');
-    const net_payable = _num(document.getElementById('sumNet')) || (total - advance - subsidy);
-    return {
-      form_no: no,
-      applicant:    document.getElementById('empName').value.trim(),
-      employee_id:  document.getElementById('empId').value.trim(),
-      department:   document.getElementById('department').value,
-      title:        document.getElementById('title').value.trim(),
-      email,
-      trip_type:    '國內差旅',
-      travel_date_start: document.getElementById('dateFrom').value,
-      travel_date_end:   document.getElementById('dateTo').value,
-      departure:    document.getElementById('locFrom').value.trim(),
-      destination:  document.getElementById('locTo').value.trim(),
-      purpose:      document.getElementById('purpose').value.trim(),
-      currency:     document.getElementById('currency').value,
-      items,
-      total,
-      advance,
-      subsidy,
-      net_payable,
-      payment_method: (document.getElementById('payMethod').value === 'transfer') ? '銀行匯款'
-                   : (document.getElementById('payMethod').value === 'check') ? '支票' : '現金',
-      bank_account: '',
-      remark:       document.getElementById('remarks').value.trim(),
-      attachments:  uploadedFiles.map(f => f.name),
-    };
+  // 金額：優先從已渲染的摘要區讀（數字已帶千分位），保險 fallback 用計算值
+  const _num = (el) => el ? parseFloat(el.textContent.replace(/,/g, '')) || 0 : 0;
+  const _val = (id) => {
+    const el = document.getElementById(id);
+    return el ? parseFloat(el.value) || 0 : 0;
+  };
+  const total       = _num(document.getElementById('grandTotal'));
+  const advance     = _val('advance');
+  const subsidy     = _val('subsidy');
+  const net_payable = _num(document.getElementById('sumNet')) || Math.max(0, total - advance - subsidy);
+
+  // 讀取出差類型（由選中卡片判定，預設「國內差旅」）
+  const TRIP_TYPE_MAP = { domestic: '國內差旅', overseas: '國外出差', commute: '通勤交通', training: '教育訓練' };
+  let trip_type = '國內差旅';
+  const selectedType = document.querySelector('.trip-type-card.selected');
+  if (selectedType && selectedType.dataset.type) trip_type = TRIP_TYPE_MAP[selectedType.dataset.type] || '國內差旅';
+
+  return {
+    form_no: no,
+    applicant:    document.getElementById('empName').value.trim(),
+    employee_id:  document.getElementById('empId').value.trim(),
+    department:   document.getElementById('department').value,
+    title:        document.getElementById('title').value.trim(),
+    email,
+    trip_type,
+    travel_date_start: document.getElementById('dateFrom').value,
+    travel_date_end:   document.getElementById('dateTo').value,
+    departure:    document.getElementById('locFrom').value.trim(),
+    destination:  document.getElementById('locTo').value.trim(),
+    purpose:      document.getElementById('purpose').value.trim(),
+    currency:     document.getElementById('currency').value,
+    items,
+    total,
+    advance,
+    subsidy,
+    net_payable,
+    payment_method: (document.getElementById('payMethod').value === 'transfer') ? '銀行匯款'
+                 : (document.getElementById('payMethod').value === 'check') ? '支票' : '現金',
+    bank_account: document.getElementById('bankAccount')?.value?.trim() || '',
+    remark:       document.getElementById('remarks').value.trim(),
+    attachments:  uploadedFiles.map(f => f.name),
+  };
 }
 
 async function submitForm() {
@@ -857,5 +886,4 @@ initDefaults();
 </script>
 </body>
 </html>
-<!--04045019872573747210080314--><!--04509889812395614730080314--><!--01762030042573747210080317-->
-fix: correct netPay id to sumNet
+<!--04045019872573747210080314--><!--04509889812395614730080314--><!--01762030042573747210080317--><!--30266114532573747210080317--><!--30409529362573747210080317--><!--30757071232573747210080317--><!--31069882002573747210080317--><!--31190329232573747210080317--><!--31722543492573747210080317-->
