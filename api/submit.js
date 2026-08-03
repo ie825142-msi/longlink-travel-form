@@ -47,51 +47,85 @@ module.exports = async (req, res) => {
     // 若前端未帶 form_no，自動生成
     const formNo = data.form_no || generateFormNo();
 
-    // ---------- 2. 寫入主表 ----------
+    // ---------- 2. 資料清洗與防呆 ----------
+    // Email 格式再驗一次（避免前端送來奇怪字串）
+    const emailRe = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    const safeEmail = data.email && emailRe.test(data.email) ? data.email : null;
+
+    // 日期格式必須是 YYYY-MM-DD，否則轉 null 讓 DB 用預設/報錯
+    const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+    const travelStart = dateRe.test(data.travel_date_start || '') ? data.travel_date_start : null;
+    const travelEnd   = dateRe.test(data.travel_date_end   || '') ? data.travel_date_end   : null;
+    if (!travelStart || !travelEnd) {
+      res.set(CORS);
+      return res.status(400).json({ success: false, message: '出差日期格式錯誤，請使用 YYYY-MM-DD' });
+    }
+
+    // 付款方式白名單
+    const PAY_METHODS = ['銀行匯款', '支票', '現金'];
+    const payMethod = PAY_METHODS.includes(data.payment_method) ? data.payment_method : '銀行匯款';
+
+    // 幣別白名單
+    const CURRENCIES = ['NTD', 'USD', 'CNY', 'JPY', 'EUR', 'HKD'];
+    const currency = CURRENCIES.includes(data.currency) ? data.currency : 'NTD';
+
+    // 出差類型白名單
+    const TRIP_TYPES = ['國內差旅', '國外出差', '通勤交通', '教育訓練'];
+    const tripType = TRIP_TYPES.includes(data.trip_type) ? data.trip_type : '國內差旅';
+
+    // 金額防呆：轉成數字並取小數點後兩位
+    const num = v => {
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
+    };
+
+    // ---------- 3. 寫入主表 ----------
     const { data: inserted, error } = await supabase
       .from('travel_requests')
       .insert({
         form_no: formNo,
-        applicant:      data.applicant,
-        employee_id:    data.employee_id || null,
-        department:     data.department || null,
-        title:          data.title || null,
-        email:          data.email || null,
-        trip_type:      data.trip_type || '國內差旅',
-        travel_start:   data.travel_date_start,
-        travel_end:     data.travel_date_end,
-        departure:      data.departure || null,
-        destination:    data.destination || null,
-        purpose:        data.purpose || null,
-        currency:       data.currency || 'NTD',
-        total_amount:   Number(data.total || 0),
-        advance_amount: Number(data.advance || 0),
-        subsidy_amount: Number(data.subsidy || 0),
-        net_payable:    Number(data.net_payable || 0),
-        payment_method: data.payment_method || '銀行匯款',
-        bank_account:   data.bank_account || null,
-        remark:         data.remark || null,
-        attachments:    data.attachments || [],
+        applicant:      String(data.applicant || '').slice(0, 50),
+        employee_id:    data.employee_id ? String(data.employee_id).slice(0, 30) : null,
+        department:     data.department  ? String(data.department).slice(0, 50)  : null,
+        title:          data.title       ? String(data.title).slice(0, 50)       : null,
+        email:          safeEmail,
+        trip_type:      tripType,
+        travel_start:   travelStart,
+        travel_end:     travelEnd,
+        departure:      data.departure   ? String(data.departure).slice(0, 100) : null,
+        destination:    data.destination ? String(data.destination).slice(0, 100) : null,
+        purpose:        data.purpose     ? String(data.purpose) : null,
+        currency:       currency,
+        total_amount:   num(data.total),
+        advance_amount: num(data.advance),
+        subsidy_amount: num(data.subsidy),
+        net_payable:    num(data.net_payable),
+        payment_method: payMethod,
+        bank_account:   data.bank_account ? String(data.bank_account).slice(0, 50) : null,
+        remark:         data.remark       ? String(data.remark) : null,
+        attachments:    Array.isArray(data.attachments) ? data.attachments.map(String) : [],
       })
       .select('id')
       .single();
 
     if (error) throw error;
 
-    // ---------- 3. 寫入費用項目 ----------
-    const itemRows = data.items.map((it) => ({
+    // ---------- 4. 寫入費用項目 ----------
+    const itemRows = (data.items || []).map((it, i) => ({
       request_id: inserted.id,
-      item_no:    it.no || 0,
-      item_name:  it.name || '其他',
-      detail:     it.detail || '',
-      amount:     Number(it.amount || 0),
+      item_no:    Number(it.no) || (i + 1),
+      item_name:  String(it.name || '其他').slice(0, 50),
+      detail:     it.detail ? String(it.detail) : '',
+      amount:     num(it.amount),
     }));
+    if (itemRows.length === 0) {
+      res.set(CORS);
+      return res.status(400).json({ success: false, message: '請至少填寫一筆費用' });
+    }
     const { error: itemErr } = await supabase
       .from('travel_expense_items')
       .insert(itemRows);
     if (itemErr) throw itemErr;
-
-    // ---------- 4. 寄 Email 通知（選用） ----------
     await sendNotifications(data, formNo).catch((e) => {
       console.warn('Email send failed (non-blocking):', e.message);
     });
@@ -162,6 +196,11 @@ async function sendNotifications(data, formNo) {
           <li>申請撥款：<b>${amountText}</b></li>
         </ul>
         <p>請登入後台審核系統進行核准/駁回。</p>
+      `,
+    });
+  }
+}
+
       `,
     });
   }
