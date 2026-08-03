@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LONGLINK · 差旅費用申請表</title>
+<script src="https://aisearch-task.bj.bcebos.com/static/tailwindcss-3.4.17.js"></script>
+<style>
+  :root {
+    --brand-rgb: 14, 116, 144;
+    --brand: rgb(var(--brand-rgb));
+    --brand-light: rgba(var(--brand-rgb), 0.08);
+    --brand-dark: #0c5e74;
+    --accent: #f59e0b;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --bg: #f8fafc;
+  }
+  * { font-family: 'PingFang SC', 'Microsoft JhengHei', 'Microsoft YaHei', sans-serif; }
+  body { background: linear-gradient(135deg, #f0f9fb 0%, #f8fafc 50%, #eff6ff 100%); min-height: 100vh; }
+  
+  .brand-gradient { background: linear-gradient(135deg, #0e7490 0%, #0891b2 50%, #06b6d4 100%); }
+  .card-shadow { box-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 8px 24px rgba(14,116,144,0.08); }
+  .input-field {
+    width: 100%; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px;
+    font-size: 15px; color: var(--ink); background: #fff; transition: all .2s ease;
+    outline: none;
+  }
+  .input-field:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-light); }
+  .input-field::placeholder { color: #94a3b8; }
+  label.form-label { display: block; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; letter-spacing: .02em; }
+  label.form-label .required { color: #ef4444; margin-left: 2px; }
+  
+  .amount-input { text-align: right; font-variant-numeric: tabular-nums; font-family: 'SF Mono', Menlo, Consolas, monospace; }
+  
+  .expense-row { transition: all .2s ease; }
+  .expense-row:hover { background: #f0f9ff; }
+  
+  .btn-primary {
+    background: linear-gradient(135deg, #0e7490 0%, #0891b2 100%); color: white; padding: 12px 28px; border-radius: 10px;
+    font-weight: 600; font-size: 15px; letter-spacing: .03em; transition: all .2s ease;
+    box-shadow: 0 4px 12px rgba(14,116,144,0.25);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(14,116,144,0.35); }
+  .btn-secondary {
+    background: white; color: var(--ink); padding: 12px 24px; border-radius: 10px;
+    font-weight: 600; font-size: 15px; border: 1px solid var(--line); transition: all .2s ease;
+  }
+  .btn-secondary:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-light); }
+  .btn-ghost {
+    background: transparent; color: var(--muted); padding: 8px 16px; border-radius: 8px;
+    font-weight: 500; font-size: 14px; transition: all .2s ease;
+  }
+  .btn-ghost:hover { background: #f1f5f9; color: var(--ink); }
+  
+  .step-badge {
+    width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; flex-shrink: 0;
+  }
+  .step-active { background: var(--brand); color: white; box-shadow: 0 0 0 4px var(--brand-light); }
+  .step-done { background: #10b981; color: white; }
+  .step-pending { background: #e2e8f0; color: #94a3b8; }
+  .step-line { flex: 1; height: 2px; background: #e2e8f0; margin: 0 8px; align-self: center; }
+  .step-line.done { background: #10b981; }
+  
+  .section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  .section-icon {
+    width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    background: var(--brand-light); color: var(--brand);
+  }
+  
+  .total-card {
+    background: linear-gradient(135deg, #0e7490 0%, #0891b2 100%); color: white;
+    border-radius: 16px; padding: 24px; position: relative; overflow: hidden;
+  }
+  .total-card::before {
+    content: ''; position: absolute; top: -40px; right: -40px; width: 160px; height: 160px;
+    background: rgba(255,255,255,0.1); border-radius: 50%;
+  }
+  .total-card::after {
+    content: ''; position: absolute; bottom: -60px; right: 60px; width: 120px; height: 120px;
+    background: rgba(255,255,255,0.06); border-radius: 50%;
+  }
+  
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px;
+    font-size: 12px; font-weight: 600;
+  }
+  .chip-blue { background: #dbeafe; color: #1e40af; }
+  .chip-amber { background: #fef3c7; color: #92400e; }
+  
+  .upload-zone {
+    border: 2px dashed #cbd5e1; border-radius: 12px; padding: 28px; text-align: center;
+    transition: all .2s ease; cursor: pointer; background: #fafbfc;
+  }
+  .upload-zone:hover { border-color: var(--brand); background: var(--brand-light); }
+  .upload-zone.dragover { border-color: var(--brand); background: var(--brand-light); transform: scale(1.01); }
+  
+  .file-item {
+    display: flex; align-items: center; justify-content: space-between; padding: 10px 14px;
+    background: #f8fafc; border-radius: 8px; border: 1px solid var(--line); margin-top: 8px;
+  }
+  
+  .trip-type-card {
+    border: 2px solid var(--line); border-radius: 12px; padding: 16px; cursor: pointer; transition: all .2s;
+    text-align: center;
+  }
+  .trip-type-card:hover { border-color: var(--brand); background: var(--brand-light); }
+  .trip-type-card.selected { border-color: var(--brand); background: var(--brand-light); box-shadow: 0 0 0 3px rgba(14,116,144,0.1); }
+  
+  select.input-field { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+  
+  @keyframes fadeUp { from { opacity: .92; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-up { animation: fadeUp .5s cubic-bezier(.2,.8,.2,1) both; }
+  
+  .toast {
+    position: fixed; top: 24px; right: 24px; padding: 14px 20px; border-radius: 12px;
+    background: #10b981; color: white; font-weight: 600; font-size: 14px; z-index: 9999;
+    box-shadow: 0 10px 30px rgba(16,185,129,0.3); transform: translateX(400px); transition: transform .3s cubic-bezier(.2,.8,.2,1);
+  }
+  .toast.show { transform: translateX(0); }
+  
+  .signature-pad {
+    border: 1px dashed #cbd5e1; border-radius: 8px; background: #fafbfc; height: 80px;
+    display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 14px;
+  }
+
+  @media print {
+    body { background: white; }
+    .no-print { display: none !important; }
+    .card-shadow { box-shadow: none; border: 1px solid #e2e8f0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Nav -->
+<nav class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 no-print">
+  <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg brand-gradient flex items-center justify-center text-white font-black text-lg">L</div>
+      <div>
+        <div class="font-bold text-slate-900 text-[15px] leading-tight">LONGLINK</div>
+        <div class="text-[11px] text-slate-500 tracking-wider">TRAVEL EXPENSE SYSTEM</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 text-sm text-slate-600">
+      <span class="hidden md:inline">員工自助平台</span>
+      <div class="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold">IS</div>
+    </div>
+  </div>
+</nav>
+
+<main class="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-10">
+
+  <!-- Header -->
+  <div class="mb-8 fade-up">
+    <div class="flex items-center gap-2 text-sm text-slate-500 mb-2 no-print">
+      <span>首頁</span><span>/</span><span>費用申請</span><span>/</span><span class="text-slate-900 font-medium">差旅費用申請</span>
+    </div>
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <div>
+        <h1 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">差旅費用申請表</h1>
+        <p class="text-slate-500 mt-2 text-[15px]">請據實填報出差期間各項費用，並上傳相關憑證以加速審核流程。</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="chip chip-blue">表單編號：TR-<span id="formNo">20260802-001</span></span>
+        <span class="chip chip-amber">草稿</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stepper -->
+  <div class="bg-white rounded-2xl card-shadow p-5 md:p-6 mb-6 fade-up no-print">
+    <div class="flex items-center">
+      <div class="flex flex-col items-center gap-2">
+        <div class="step-badge step-active">1</div>
+        <span class="text-xs font-semibold text-slate-900">填寫申請</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="flex flex-col items-center gap-2">
+        <div class="step-badge step-pending">2</div>
+        <span class="text-xs font-medium text-slate-400">直屬主管</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="flex flex-col items-center gap-2">
+        <div class="step-badge step-pending">3</div>
+        <span class="text-xs font-medium text-slate-400">財務審核</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="flex flex-col items-center gap-2">
+        <div class="step-badge step-pending">4</div>
+        <span class="text-xs font-medium text-slate-400">撥款完成</span>
+      </div>
+    </div>
+  </div>
+
+  <form id="expenseForm" class="space-y-6">
+
+    <!-- Section 1: 基本資訊 -->
+    <section class="bg-white rounded-2xl card-shadow p-6 md:p-8 fade-up">
+      <div class="section-title">
+        <div class="section-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div>
+          <h2 class="text-lg md:text-xl font-bold text-slate-900">申請人基本資料</h2>
+          <p class="text-xs text-slate-500 mt-0.5">個人資訊將自動帶入，如有錯誤請至 HR 系統修正</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div>
+          <label class="form-label">填表日期<span class="required">*</span></label>
+          <input type="date" id="fillDate" class="input-field" required>
+        </div>
+        <div>
+          <label class="form-label">員工姓名<span class="required">*</span></label>
+          <input type="text" id="empName" placeholder="請輸入姓名" class="input-field" value="Ian Sun" required>
+        </div>
+        <div>
+          <label class="form-label">員工編號</label>
+          <input type="text" id="empId" placeholder="例如：LK00123" class="input-field">
+        </div>
+        <div>
+          <label class="form-label">部門名稱<span class="required">*</span></label>
+          <select id="department" class="input-field" required>
+            <option value="">請選擇部門</option>
+            <option value="Engineer" selected>工程部 Engineer</option>
+            <option value="Sales">業務部 Sales</option>
+            <option value="Marketing">行銷部 Marketing</option>
+            <option value="HR">人力資源 HR</option>
+            <option value="Finance">財務部 Finance</option>
+            <option value="Operations">營運部 Operations</option>
+            <option value="RD">研發部 R&D</option>
+            <option value="PM">專案管理 PM</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">職稱</label>
+          <input type="text" id="title" placeholder="例如：資深工程師" class="input-field">
+        </div>
+        <div>
+          <label class="form-label">聯絡分機 / Email</label>
+          <input type="text" id="contact" placeholder="分機 123 / ian@longlink.com" class="input-field">
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: 差旅資訊 -->
+    <section class="bg-white rounded-2xl card-shadow p-6 md:p-8 fade-up">
+      <div class="section-title">
+        <div class="section-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+        </div>
+        <div>
+          <h2 class="text-lg md:text-xl font-bold text-slate-900">出差行程資訊</h2>
+          <p class="text-xs text-slate-500 mt-0.5">請填寫本次出差的日期、地點與目的</p>
+        </div>
+      </div>
+
+      <!-- Trip Type -->
+      <div class="mb-5">
+        <label class="form-label">出差類型<span class="required">*</span></label>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="trip-type-card selected" data-type="domestic" onclick="selectTripType(this,'domestic')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto mb-2 text-cyan-700"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <div class="text-sm font-semibold text-slate-900">國內差旅</div>
+            <div class="text-xs text-slate-500 mt-1">Domestic</div>
+          </div>
+          <div class="trip-type-card" data-type="overseas" onclick="selectTripType(this,'overseas')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto mb-2 text-slate-400"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            <div class="text-sm font-semibold text-slate-900">國外出差</div>
+            <div class="text-xs text-slate-500 mt-1">Overseas</div>
+          </div>
+          <div class="trip-type-card" data-type="commute" onclick="selectTripType(this,'commute')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto mb-2 text-slate-400"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <div class="text-sm font-semibold text-slate-900">通勤交通</div>
+            <div class="text-xs text-slate-500 mt-1">Commute</div>
+          </div>
+          <div class="trip-type-card" data-type="training" onclick="selectTripType(this,'training')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto mb-2 text-slate-400"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+            <div class="text-sm font-semibold text-slate-900">教育訓練</div>
+            <div class="text-xs text-slate-500 mt-1">Training</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div>
+          <label class="form-label">出差起始日期<span class="required">*</span></label>
+          <input type="date" id="dateFrom" class="input-field" required>
+        </div>
+        <div>
+          <label class="form-label">出差結束日期<span class="required">*</span></label>
+          <input type="date" id="dateTo" class="input-field" required>
+        </div>
+        <div>
+          <label class="form-label">起程地點 / 出發點</label>
+          <input type="text" id="locFrom" placeholder="例如：林口" class="input-field" value="林口">
+        </div>
+        <div>
+          <label class="form-label">目的地 / 拜訪公司</label>
+          <input type="text" id="locTo" placeholder="例如：松翰科技" class="input-field" value="松翰">
+        </div>
+        <div class="md:col-span-2">
+          <label class="form-label">出差事由<span class="required">*</span></label>
+          <textarea id="purpose" rows="3" class="input-field" placeholder="請說明本次出差目的、客戶/專案名稱、預計成果..." required></textarea>
+        </div>
+        <div>
+          <label class="form-label">幣別</label>
+          <select id="currency" class="input-field">
+            <option value="NTD" selected>NTD 新台幣</option>
+            <option value="USD">USD 美元</option>
+            <option value="CNY">CNY 人民幣</option>
+            <option value="JPY">JPY 日圓</option>
+            <option value="EUR">EUR 歐元</option>
+            <option value="HKD">HKD 港幣</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">專案 / 成本中心代碼</label>
+          <input type="text" id="costCenter" placeholder="例如：PRJ-2026-042" class="input-field">
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: 費用明細 -->
+    <section class="bg-white rounded-2xl card-shadow p-6 md:p-8 fade-up">
+      <div class="flex items-start justify-between flex-wrap gap-3 mb-5">
+        <div class="section-title !mb-0">
+          <div class="section-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div>
+            <h2 class="text-lg md:text-xl font-bold text-slate-900">費用明細</h2>
+            <p class="text-xs text-slate-500 mt-0.5">油資以「自備車公里數 × 8元」計算，其他項目請填實際金額</p>
+          </div>
+        </div>
+        <button type="button" onclick="addExpenseRow()" class="btn-secondary text-sm !py-2 !px-4 flex items-center gap-2 no-print">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新增明細
+        </button>
+      </div>
+
+      <!-- Expense Table -->
+      <div class="overflow-x-auto -mx-2 px-2">
+        <table class="w-full min-w-[720px] border-collapse">
+          <thead>
+            <tr class="text-left text-xs text-slate-500 border-b-2 border-slate-200">
+              <th class="py-3 px-2 font-semibold w-[22%]">費用項目</th>
+              <th class="py-3 px-2 font-semibold w-[14%]">日期</th>
+              <th class="py-3 px-2 font-semibold w-[14%]">數量 / 公里</th>
+              <th class="py-3 px-2 font-semibold w-[14%]">金額</th>
+              <th class="py-3 px-2 font-semibold w-[26%]">備註說明</th>
+              <th class="py-3 px-2 w-[10%] no-print"></th>
+            </tr>
+          </thead>
+          <tbody id="expenseBody">
+            <!-- Rows injected by JS -->
+          </tbody>
+          <tfoot>
+            <tr class="border-t-2 border-slate-300 font-bold">
+              <td colspan="3" class="py-4 px-2 text-right text-slate-700">合計（<span id="currencyLabel">NTD</span>）</td>
+              <td class="py-4 px-2 text-right text-xl font-black text-cyan-700 font-mono" id="grandTotal">0</td>
+              <td colspan="2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Mileage Notice -->
+      <div class="mt-5 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" class="shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <div class="text-[13px] text-amber-900 leading-relaxed">
+          <strong>油資計算說明：</strong>自備車輛油資補助以 <strong>每公里 8 元</strong> 計算，請務必填寫實際行駛公里數（非金額）。停車費、過路費(ETC)、計程車資請檢附收據或電子發票。交際費需於備註註明對方公司名稱及與會人員姓名。
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: 其他費用 + 附件 -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-up">
+      
+      <!-- 其他費用 / 補助款抵扣 -->
+      <div class="bg-white rounded-2xl card-shadow p-6 lg:col-span-1">
+        <div class="section-title">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <h2 class="text-lg font-bold text-slate-900">扣款 / 預支</h2>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="form-label">預支款金額</label>
+            <input type="number" id="advance" placeholder="0" min="0" class="input-field amount-input" oninput="calcTotal()">
+            <p class="text-xs text-slate-500 mt-1">如有向公司預支差旅費請填寫，將於撥款時扣除</p>
+          </div>
+          <div>
+            <label class="form-label">公司補助款</label>
+            <input type="number" id="subsidy" placeholder="0" min="0" class="input-field amount-input" oninput="calcTotal()">
+            <p class="text-xs text-slate-500 mt-1">公司已支付之補助款（如機票款）需扣除</p>
+          </div>
+          <div>
+            <label class="form-label">付款方式</label>
+            <select id="payMethod" class="input-field">
+              <option value="transfer">銀行匯款（薪資帳戶）</option>
+              <option value="check">支票</option>
+              <option value="cash">現金</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 憑證上傳 -->
+      <div class="bg-white rounded-2xl card-shadow p-6 lg:col-span-2">
+        <div class="section-title">
+          <div class="section-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">憑證上傳</h2>
+            <p class="text-xs text-slate-500 mt-0.5">支援 JPG / PNG / PDF 格式，單檔上限 10MB</p>
+          </div>
+        </div>
+        <div class="upload-zone no-print" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0e7490" stroke-width="1.5" class="mx-auto mb-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div class="text-sm font-semibold text-slate-700">點擊或拖曳檔案至此上傳</div>
+          <div class="text-xs text-slate-500 mt-1">發票、收據、電子機票、登機證等相關憑證</div>
+          <input type="file" id="fileInput" multiple accept="image/*,.pdf" class="hidden" onchange="handleFiles(this.files)">
+        </div>
+        <div id="fileList" class="mt-2"></div>
+      </div>
+    </section>
+
+    <!-- Section 5: 備註與簽核 -->
+    <section class="bg-white rounded-2xl card-shadow p-6 md:p-8 fade-up">
+      <div class="section-title">
+        <div class="section-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div>
+          <h2 class="text-lg md:text-xl font-bold text-slate-900">備註與聲明</h2>
+          <p class="text-xs text-slate-500 mt-0.5">如有其他說明事項請填寫於此</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="md:col-span-2">
+          <label class="form-label">備註說明</label>
+          <textarea id="remarks" rows="3" class="input-field" placeholder="例如：交際費對象為XX公司王總經理；行程因天候延後一日..."></textarea>
+        </div>
+
+        <div>
+          <label class="form-label">申請人簽章</label>
+          <div class="signature-pad">
+            <span>✓ 送出即視同本人簽署，確認以上資料屬實</span>
+          </div>
+          <div class="text-xs text-slate-500 mt-2">送出日期：<span id="signDate">2026-08-02</span></div>
+        </div>
+        <div>
+          <label class="form-label">主管簽核欄</label>
+          <div class="signature-pad" style="color:#cbd5e1">待主管簽核</div>
+          <div class="text-xs text-slate-500 mt-2">簽核日期：—</div>
+        </div>
+      </div>
+
+      <!-- Declaraction -->
+      <div class="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-600 leading-relaxed">
+        <label class="flex items-start gap-2 cursor-pointer">
+          <input type="checkbox" id="agree" class="mt-1 w-4 h-4 accent-cyan-700" required>
+          <span>本人保證所填報之各項費用均為公務所需，且單據真實無誤；如有不實申報，願依公司相關規定接受議處。本人已閱讀並同意遵守 <a href="#" class="text-cyan-700 font-semibold hover:underline">《LONGLINK 差旅費用報支辦法》</a> 之相關規範。</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Total Summary Sticky -->
+    <section class="total-card card-shadow fade-up no-print">
+      <div class="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <div>
+          <div class="text-xs text-cyan-100 font-medium tracking-wider mb-1">費用小計</div>
+          <div class="text-2xl md:text-3xl font-black font-mono" id="sumSubtotal">0</div>
+        </div>
+        <div>
+          <div class="text-xs text-cyan-100 font-medium tracking-wider mb-1">預支 / 補助抵扣</div>
+          <div class="text-2xl md:text-3xl font-black font-mono text-amber-200" id="sumDeduct">0</div>
+        </div>
+        <div>
+          <div class="text-xs text-cyan-100 font-medium tracking-wider mb-1">申請撥款金額</div>
+          <div class="text-2xl md:text-3xl font-black font-mono" id="sumNet">0</div>
+        </div>
+        <div class="flex items-end justify-end">
+          <div class="text-right">
+            <div class="text-xs text-cyan-100 mb-2">明細項目</div>
+            <div class="text-lg font-bold"><span id="itemCount">0</span> 筆</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <div class="flex flex-col md:flex-row items-stretch md:items-center justify-end gap-3 no-print fade-up">
+      <button type="button" onclick="resetForm()" class="btn-ghost">重 置</button>
+      <button type="button" onclick="saveDraft()" class="btn-secondary">儲存草稿</button>
+      <button type="button" onclick="window.print()" class="btn-secondary">
+        <span class="flex items-center gap-2 justify-center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          列印 / 匯出PDF
+        </span>
+      </button>
+      <button type="button" onclick="submitForm()" class="btn-primary flex items-center gap-2 justify-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        送出申請
+      </button>
+    </div>
+
+    <div class="text-center text-xs text-slate-400 pt-4 no-print">
+      © 2026 LONGLINK Corp. · 差旅費用申請系統 v2.1 · 若有系統問題請聯繫 <a class="text-cyan-700 hover:underline" href="mailto:it@longlink.com">IT 支援</a>
+    </div>
+  </form>
+</main>
+
+<div id="toast" class="toast">✓ 申請已送出</div>
+
+<script>
+// Expense categories
+const CATEGORIES = [
+  { code: 'fuel',   name: '1. 油資（自備車公里×8元）', isMileage: true,  defaultAmount: null },
+  { code: 'park',   name: '2. 停車費',                 isMileage: false, defaultAmount: 75 },
+  { code: 'etc',    name: '3. 過路費（ETC）',          isMileage: false, defaultAmount: 105 },
+  { code: 'taxi',   name: '4. 交通費—計程車資',        isMileage: false, defaultAmount: null },
+  { code: 'train',  name: '5. 交通費—火車 / 巴士',     isMileage: false, defaultAmount: null },
+  { code: 'flight', name: '6. 交通費—飛機',            isMileage: false, defaultAmount: null },
+  { code: 'tel',    name: '7. 郵電費—電話 / 網路',     isMileage: false, defaultAmount: null },
+  { code: 'ent',    name: '8. 交際費（請備註公司/姓名）', isMileage: false, defaultAmount: null },
+  { code: 'wage',   name: '9. 固定費用（工資）',       isMileage: false, defaultAmount: null },
+  { code: 'other',  name: '10. 其他',                  isMileage: false, defaultAmount: null },
+];
+
+const categoryOptions = CATEGORIES.map(c => `<option value="${c.code}">${c.name}</option>`).join('');
+
+// State
+let rowId = 0;
+const rows = [];
+
+function initDefaults() {
+  // Default dates
+  const today = new Date('2026-08-02');
+  document.getElementById('fillDate').value = '2026-08-02';
+  document.getElementById('dateFrom').value = '2026-04-01';
+  document.getElementById('dateTo').value = '2026-04-30';
+  document.getElementById('signDate').textContent = '2026-08-02';
+
+  // Add default rows matching original form
+  addExpenseRow('fuel', '2026-04-29', '55', null, '林口-松翰來回');
+  addExpenseRow('park', '2026-04-29', null, '75', '');
+  addExpenseRow('etc', '2026-04-29', null, '105', 'ETC 自動扣繳');
+  // Add empty rows for other categories
+  CATEGORIES.slice(3).forEach(c => addExpenseRow(c.code, '', null, c.defaultAmount ? String(c.defaultAmount) : '', ''));
+}
+
+function addExpenseRow(presetCode, presetDate, presetQty, presetAmt, presetRemark) {
+  const id = ++rowId;
+  const tr = document.createElement('tr');
+  tr.className = 'expense-row border-b border-slate-100';
+  tr.id = `row-${id}`;
+  tr.innerHTML = `
+    <td class="py-2 px-2">
+      <select class="input-field !py-2 !text-[14px]" onchange="onCategoryChange(this, ${id})" data-field="cat">
+        ${presetCode ? categoryOptions.replace(`value="${presetCode}"`, `value="${presetCode}" selected`) : '<option value="">請選擇</option>' + categoryOptions}
+      </select>
+    </td>
+    <td class="py-2 px-2">
+      <input type="date" class="input-field !py-2 !text-[14px]" data-field="date" value="${presetDate||''}" oninput="calcTotal()">
+    </td>
+    <td class="py-2 px-2">
+      <input type="number" min="0" step="1" placeholder="公里" class="input-field !py-2 !text-[14px] amount-input qty-field" data-field="qty" value="${presetQty||''}" oninput="onQtyChange(${id})" style="${presetCode==='fuel'?'':'display:none'}">
+    </td>
+    <td class="py-2 px-2">
+      <input type="number" min="0" step="1" placeholder="0" class="input-field !py-2 !text-[14px] amount-input amt-field" data-field="amt" value="${presetAmt??''}" oninput="calcTotal()">
+    </td>
+    <td class="py-2 px-2">
+      <input type="text" placeholder="備註（必填：交際費對象）" class="input-field !py-2 !text-[14px]" data-field="remark" value="${presetRemark||''}">
+    </td>
+    <td class="py-2 px-2 text-center no-print">
+      <button type="button" onclick="removeRow(${id})" class="text-slate-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition" title="刪除">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </td>
+  `;
+  document.getElementById('expenseBody').appendChild(tr);
+  rows.push({ id, el: tr });
+  calcTotal();
+}
+
+function onCategoryChange(sel, id) {
+  const tr = document.getElementById(`row-${id}`);
+  const code = sel.value;
+  const cat = CATEGORIES.find(c => c.code === code);
+  const qty = tr.querySelector('.qty-field');
+  const amt = tr.querySelector('.amt-field');
+  if (cat && cat.isMileage) {
+    qty.style.display = '';
+    qty.placeholder = '公里數';
+    amt.readOnly = true;
+    amt.classList.add('bg-slate-50', 'text-slate-500');
+    // Auto calc
+    if (qty.value) {
+      amt.value = Math.round(parseFloat(qty.value) * 8);
+    } else {
+      amt.value = '';
+    }
+  } else {
+    qty.style.display = 'none';
+    qty.value = '';
+    amt.readOnly = false;
+    amt.classList.remove('bg-slate-50', 'text-slate-500');
+  }
+  calcTotal();
+}
+
+function onQtyChange(id) {
+  const tr = document.getElementById(`row-${id}`);
+  const qty = tr.querySelector('.qty-field');
+  const amt = tr.querySelector('.amt-field');
+  const km = parseFloat(qty.value) || 0;
+  amt.value = km > 0 ? Math.round(km * 8) : '';
+  calcTotal();
+}
+
+function removeRow(id) {
+  const tr = document.getElementById(`row-${id}`);
+  if (tr) tr.remove();
+  const idx = rows.findIndex(r => r.id === id);
+  if (idx > -1) rows.splice(idx, 1);
+  calcTotal();
+}
+
+function calcTotal() {
+  let sum = 0;
+  let count = 0;
+  document.querySelectorAll('#expenseBody tr').forEach(tr => {
+    const amt = parseFloat(tr.querySelector('[data-field="amt"]').value) || 0;
+    if (amt > 0) {
+      sum += amt;
+      count++;
+    }
+  });
+  const advance = parseFloat(document.getElementById('advance').value) || 0;
+  const subsidy = parseFloat(document.getElementById('subsidy').value) || 0;
+  const deduct = advance + subsidy;
+  const net = Math.max(0, sum - deduct);
+  
+  const fmt = n => n.toLocaleString('zh-TW');
+  document.getElementById('grandTotal').textContent = fmt(sum);
+  document.getElementById('sumSubtotal').textContent = fmt(sum);
+  document.getElementById('sumDeduct').textContent = '-' + fmt(deduct);
+  document.getElementById('sumNet').textContent = fmt(net);
+  document.getElementById('itemCount').textContent = count;
+}
+
+// Trip type
+function selectTripType(el, type) {
+  document.querySelectorAll('.trip-type-card').forEach(c => {
+    c.classList.remove('selected');
+    c.querySelector('svg').classList.remove('text-cyan-700');
+    c.querySelector('svg').classList.add('text-slate-400');
+  });
+  el.classList.add('selected');
+  el.querySelector('svg').classList.add('text-cyan-700');
+  el.querySelector('svg').classList.remove('text-slate-400');
+}
+
+// File upload
+const uploadedFiles = [];
+function handleFiles(files) {
+  Array.from(files).forEach(f => {
+    if (f.size > 10*1024*1024) { alert(`檔案 ${f.name} 超過 10MB`); return; }
+    uploadedFiles.push(f);
+    renderFiles();
+  });
+}
+function renderFiles() {
+  const list = document.getElementById('fileList');
+  list.innerHTML = uploadedFiles.map((f,i) => `
+    <div class="file-item">
+      <div class="flex items-center gap-3 min-w-0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0e7490" stroke-width="2" class="shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <div class="min-w-0">
+          <div class="text-sm font-medium text-slate-800 truncate">${f.name}</div>
+          <div class="text-xs text-slate-500">${(f.size/1024).toFixed(1)} KB</div>
+        </div>
+      </div>
+      <button type="button" onclick="removeFile(${i})" class="text-slate-400 hover:text-red-500 p-1">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+function removeFile(i) { uploadedFiles.splice(i,1); renderFiles(); }
+
+// Drag drop
+const uz = document.getElementById('uploadZone');
+['dragenter','dragover'].forEach(e => uz.addEventListener(e, ev => { ev.preventDefault(); uz.classList.add('dragover'); }));
+['dragleave','drop'].forEach(e => uz.addEventListener(e, ev => { ev.preventDefault(); uz.classList.remove('dragover'); }));
+uz.addEventListener('drop', ev => { handleFiles(ev.dataTransfer.files); });
+
+// Currency sync
+document.getElementById('currency').addEventListener('change', e => {
+  document.getElementById('currencyLabel').textContent = e.target.value;
+});
+
+// Actions
+function showToast(msg, color='#10b981') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// === API Endpoint ===
+const API_BASE = '/api'; // Vercel 同網域部署，直接走相對路徑
+
+function collectFormData(no) {
+  // 收集明細（從動態產生的費用列抓取）
+  const rows = document.querySelectorAll('#expenseBody tr');
+  const items = [];
+  rows.forEach(tr => {
+    const itemNo = tr.dataset.no;
+    if (!itemNo) return;
+    const cells = tr.querySelectorAll('td');
+    const name = cells[0]?.textContent.trim();
+    // 嘗試取得 input 值，否則取文字
+    const inputEl = cells[1]?.querySelector('input');
+    const detail = inputEl ? inputEl.value : (cells[1]?.textContent.trim() || '');
+    // 金額：最後一個數字型 input
+    const amountInput = tr.querySelector('input[type="number"]');
+    const amount = Number(amountInput ? amountInput.value : 0);
+    if (amount > 0 || detail) items.push({ no: Number(itemNo), name, detail, amount });
+  });
+
+  // 從 contact 欄位嘗試解析 Email（可同時填分機/Email）
+  const contactRaw = document.getElementById('contact').value.trim();
+  const emailMatch = contactRaw.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
+  const email = emailMatch ? emailMatch[0] : '';
+
+  return {
+    form_no: no,
+    applicant:    document.getElementById('empName').value.trim(),
+    employee_id:  document.getElementById('empId').value.trim(),
+    department:   document.getElementById('department').value,
+    title:        document.getElementById('title').value.trim(),
+    email,
+    trip_type:    '國內差旅',
+    travel_date_start: document.getElementById('dateFrom').value,
+    travel_date_end:   document.getElementById('dateTo').value,
+    departure:    document.getElementById('locFrom').value.trim(),
+    destination:  document.getElementById('locTo').value.trim(),
+    purpose:      document.getElementById('purpose').value.trim(),
+    currency:     document.getElementById('currency').value,
+    items,
+    total:        parseFloat(document.getElementById('grandTotal').textContent.replace(/,/g,'')) || 0,
+    advance:      parseFloat(document.getElementById('advance').value) || 0,
+    subsidy:      parseFloat(document.getElementById('subsidy').value) || 0,
+    net_payable:  parseFloat(document.getElementById('netPay').textContent.replace(/,/g,'')) || 0,
+    payment_method: (document.getElementById('payMethod').value === 'transfer') ? '銀行匯款'
+                   : (document.getElementById('payMethod').value === 'check') ? '支票' : '現金',
+    bank_account: '',
+    remark:       document.getElementById('remarks').value.trim(),
+    attachments:  uploadedFiles.map(f => f.name),
+  };
+}
+
+async function submitForm() {
+  // Basic validation
+  const name = document.getElementById('empName').value.trim();
+  const dept = document.getElementById('department').value;
+  const from = document.getElementById('dateFrom').value;
+  const to = document.getElementById('dateTo').value;
+  const agree = document.getElementById('agree').checked;
+  if (!name || !dept || !from || !to) { alert('請填寫必填欄位（姓名/部門/出差日期）'); return; }
+  if (!agree) { alert('請勾選聲明條款'); return; }
+
+  const total = parseFloat(document.getElementById('grandTotal').textContent.replace(/,/g,'')) || 0;
+  if (total <= 0) {
+    if (!confirm('目前費用合計為 0，確定要送出嗎？')) return;
+  }
+
+  // Form number
+  const now = new Date();
+  const no = 'TR-' + now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '-' + String(Math.floor(Math.random()*900)+100);
+  document.getElementById('formNo').textContent = no;
+
+  // UI loading
+  const btn = document.querySelector('button[onclick="submitForm()"]');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<svg class="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity=".25"/><path d="M4 12a8 8 0 018-8"/></svg> 提交中…';
+
+  try {
+    const payload = collectFormData(no);
+    const res = await fetch(API_BASE + '/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const result = await res.json();
+
+    if (result.success) {
+      showToast('✓ 申請已送出，單號：' + result.form_no + '（確認信已寄出）');
+      document.querySelectorAll('.step-badge')[1].classList.remove('step-pending');
+      document.querySelectorAll('.step-badge')[1].classList.add('step-active');
+      // 送出成功後禁用表單避免重複提交
+      setTimeout(() => {
+        if (confirm('✅ 送出成功！\n單號：' + result.form_no + '\n\n是否要再填一筆新申請單？')) {
+          resetForm();
+        } else {
+          document.querySelectorAll('#expenseForm input, #expenseForm textarea, #expenseForm select, #expenseForm button').forEach(el => el.disabled = true);
+        }
+      }, 600);
+    } else {
+      throw new Error(result.message || '送出失敗');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('⚠️ 送出失敗：' + err.message, '#ef4444');
+    // 離線/失敗時仍保留單號，使用者可手動存檔
+    alert('送出時發生錯誤：\n' + err.message + '\n\n若重試仍失敗，請聯繫資訊單位或稍後再試。');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
+}
+
+function saveDraft() { showToast('💾 草稿已儲存', '#0e7490'); }
+
+function resetForm() {
+  if (!confirm('確定要重置所有欄位嗎？')) return;
+  document.getElementById('expenseForm').reset();
+  document.getElementById('expenseBody').innerHTML = '';
+  uploadedFiles.length = 0;
+  renderFiles();
+  initDefaults();
+}
+
+// Init
+initDefaults();
+</script>
+</body>
+</html>
+<!--04045019872573747210080314--><!--04509889812395614730080314-->
