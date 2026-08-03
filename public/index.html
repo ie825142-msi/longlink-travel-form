@@ -743,31 +743,41 @@ function collectFormData(no) {
   const emailMatch = contactRaw.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
   const email = emailMatch ? emailMatch[0] : '';
 
-  return {
-    form_no: no,
-    applicant:    document.getElementById('empName').value.trim(),
-    employee_id:  document.getElementById('empId').value.trim(),
-    department:   document.getElementById('department').value,
-    title:        document.getElementById('title').value.trim(),
-    email,
-    trip_type:    '國內差旅',
-    travel_date_start: document.getElementById('dateFrom').value,
-    travel_date_end:   document.getElementById('dateTo').value,
-    departure:    document.getElementById('locFrom').value.trim(),
-    destination:  document.getElementById('locTo').value.trim(),
-    purpose:      document.getElementById('purpose').value.trim(),
-    currency:     document.getElementById('currency').value,
-    items,
-    total:        parseFloat(document.getElementById('grandTotal').textContent.replace(/,/g,'')) || 0,
-    advance:      parseFloat(document.getElementById('advance').value) || 0,
-    subsidy:      parseFloat(document.getElementById('subsidy').value) || 0,
-    net_payable:  parseFloat(document.getElementById('netPay').textContent.replace(/,/g,'')) || 0,
-    payment_method: (document.getElementById('payMethod').value === 'transfer') ? '銀行匯款'
+    // 金額：優先從已渲染的摘要區讀（數字已帶千分位），保險 fallback 用計算值
+    const _num = (el) => el ? parseFloat(el.textContent.replace(/,/g, '')) || 0 : 0;
+    const _val = (id) => {
+      const el = document.getElementById(id);
+      return el ? parseFloat(el.value) || 0 : 0;
+    };
+    const total       = _num(document.getElementById('grandTotal'));
+    const advance     = _val('advance');
+    const subsidy     = _val('subsidy');
+    const net_payable = _num(document.getElementById('sumNet')) || (total - advance - subsidy);
+    return {
+      form_no: no,
+      applicant:    document.getElementById('empName').value.trim(),
+      employee_id:  document.getElementById('empId').value.trim(),
+      department:   document.getElementById('department').value,
+      title:        document.getElementById('title').value.trim(),
+      email,
+      trip_type:    '國內差旅',
+      travel_date_start: document.getElementById('dateFrom').value,
+      travel_date_end:   document.getElementById('dateTo').value,
+      departure:    document.getElementById('locFrom').value.trim(),
+      destination:  document.getElementById('locTo').value.trim(),
+      purpose:      document.getElementById('purpose').value.trim(),
+      currency:     document.getElementById('currency').value,
+      items,
+      total,
+      advance,
+      subsidy,
+      net_payable,
+      payment_method: (document.getElementById('payMethod').value === 'transfer') ? '銀行匯款'
                    : (document.getElementById('payMethod').value === 'check') ? '支票' : '現金',
-    bank_account: '',
-    remark:       document.getElementById('remarks').value.trim(),
-    attachments:  uploadedFiles.map(f => f.name),
-  };
+      bank_account: '',
+      remark:       document.getElementById('remarks').value.trim(),
+      attachments:  uploadedFiles.map(f => f.name),
+    };
 }
 
 async function submitForm() {
@@ -847,4 +857,5 @@ initDefaults();
 </script>
 </body>
 </html>
-<!--04045019872573747210080314--><!--04509889812395614730080314-->
+<!--04045019872573747210080314--><!--04509889812395614730080314--><!--01762030042573747210080317-->
+fix: correct netPay id to sumNet
